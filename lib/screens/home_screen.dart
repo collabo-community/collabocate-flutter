@@ -177,13 +177,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: createIssues,
                 buttonText: 'POST ISSUE',
               ),
-              SizedBox(
-                height: 5,
-              ),
-              GetPostButton(
-                onPressed: () {},
-                buttonText: 'POST PULL REQUEST',
-              ),
             ],
           ),
         ),
