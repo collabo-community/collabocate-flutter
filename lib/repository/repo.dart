@@ -52,29 +52,4 @@ class RepoData {
       throw Exception('Failed to create issue');
     }
   }
-
-  // Function to create Pull request using POST request
-  Future<void> createPullRequest(
-      String title, String headBranch, String baseBranch, String body) async {
-    final url = Uri.https(
-        'api.github.com', '/repos/$repositoryOwner/$repositoryName/pulls');
-    final response = await http.post(
-      url,
-      headers: {
-        'Authorization': 'Bearer $githubToken',
-        'Accept': 'application/vnd.github.v3+json',
-      },
-      body: jsonEncode({
-        'title': 'title',
-        'body': 'body',
-        'head': 'headBranch',
-        'base': 'baseBranch',
-      }),
-    );
-    if (response.statusCode != 201) {
-      throw Exception(
-        'Failed to create pull request: ${response.statusCode} - ${response.body}',
-      );
-    }
-  }
 }

@@ -17,11 +17,16 @@ class _HomeScreenState extends State<HomeScreen> {
   TextEditingController ownerController = TextEditingController();
   TextEditingController nameController = TextEditingController();
 
-  late RepoData repoData;
+  RepoData? repoData;
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
+
+    // Adding listeners for text controllers
+    ownerController.addListener(() => setState(() {}));
+    nameController.addListener(() => setState(() {}));
   }
 
   // Function to fetch issues with the RepoData class
@@ -32,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (owner.isNotEmpty && name.isNotEmpty) {
       repoData = RepoData(owner, name);
       try {
-        final fetchedIssues = await repoData.fetchIssues();
+        final fetchedIssues = await repoData!.fetchIssues();
         setState(() {
           issues = fetchedIssues;
         });
@@ -40,10 +45,24 @@ class _HomeScreenState extends State<HomeScreen> {
         titleController.clear();
         bodyController.clear();
       } catch (e) {
-        throw Exception(
-          'Failed to load issues',
+        if (!mounted) return;
+        // Displaying error message on the screen using ScaffoldMessenger
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Error in either owner or repo name: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
+    } else {
+      // Inform the user to provide owner and repo name if fields are empty
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter both owner and repository name.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -52,16 +71,46 @@ class _HomeScreenState extends State<HomeScreen> {
     final title = titleController.text;
     final body = bodyController.text;
 
+    // Ensure repoData is initialized
+    repoData ??= RepoData(ownerController.text, nameController.text);
+
     if (title.isNotEmpty && body.isNotEmpty) {
+      setState(() {
+        isLoading = true;
+      });
+
       try {
-        await repoData.createIssue(title, body);
+        await repoData!.createIssue(title, body);
         await fetchIssues();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Issue created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
         // Clearing text fields after fetching issues
         titleController.clear();
         bodyController.clear();
       } catch (e) {
-        throw Exception('Failed to create issues');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create issue: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        setState(() {
+          isLoading = false;
+        });
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please provide both title and body for the issue.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -97,61 +146,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               SizedBox(
-                height: 10,
-              ),
-              GetPostButton(
-                onPressed: fetchIssues,
-                buttonText: 'GET ISSUES',
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              Column(
-                children: [
-                  if (issues.isNotEmpty)
-                    Column(
-                      children: [
-                        Text(
-                          'Fetched Issues:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            itemCount: issues.length,
-                            itemBuilder: (context, index) {
-                              final issue = issues[index];
-                              return ListTile(
-                                title: Text(
-                                  issue['title'],
-                                ),
-                                leading: Icon(
-                                  Icons.bug_report,
-                                  color: Colors.red,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    Text(
-                      'No issues fetched yet.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                    ),
-                ],
-              ),
-              SizedBox(
                 height: 25,
               ),
               TextFormField(
@@ -173,10 +167,17 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 height: 10,
               ),
-              GetPostButton(
-                onPressed: createIssues,
-                buttonText: 'POST ISSUE',
-              ),
+              isLoading
+                  ? CircularProgressIndicator()
+                  : GetPostButton(
+                      onPressed: (ownerController.text.isNotEmpty &&
+                              nameController.text.isNotEmpty)
+                          ? () async {
+                              await createIssues();
+                            }
+                          : null,
+                      buttonText: 'POST ISSUE',
+                    ),
             ],
           ),
         ),
