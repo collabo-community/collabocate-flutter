@@ -1,10 +1,17 @@
-# Github_API_SYNC
+# @collabo-community/collabocate (flutter)
 
-## Introduction...
-The Github_API_sync App is a basic app which get issues from the GitHub repositories(Public Repo), and also post any issue on any specific repo.
+V1.0.0 development in progress. Contributions welcome. Learn how you can contribute to the project: [resources.collabo.community](https://resources.collabo.community)
 
-## How to Run
-- Get the app by forking and cloning to your local device to get it running.
-- On the interface, there are text fields where you input the GitHub Repository username which is the 'RepositoryOwner', and the repository name you want to access the issues from.
-- After inputting this details, click on 'GET issues button' to get the issues on the specified Repo.
-- You can also add issues to the Specified Repo by inputting your 'Issue Title' and 'Issue Body' on the required space and click on the 'POST Issue button', which will update the issues on the Specified Repo.
+#
+
+### Contributors
+[![All Contributors](https://img.shields.io/github/all-contributors/collabo-community/collabocate?color=ee8449&style=flat-square)](#contributors) [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://docs.collabocommunity.com/projects-overview) [![License: AGPL v3.0](https://img.shields.io/badge/License-AGPL%20v3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
