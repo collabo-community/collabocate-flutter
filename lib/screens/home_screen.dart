@@ -17,49 +17,46 @@ class _HomeScreenState extends State<HomeScreen> {
   TextEditingController ownerController = TextEditingController();
   TextEditingController nameController = TextEditingController();
 
-  RepoData? repoData;
+  late RepoData repoData;
   bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
-
-    // Adding listeners for text controllers
-    ownerController.addListener(() => setState(() {}));
-    nameController.addListener(() => setState(() {}));
   }
 
   // Function to fetch issues with the RepoData class
   Future<void> fetchIssues() async {
-    String owner = ownerController.text;
-    String name = nameController.text;
+    final owner = ownerController.text.trim();
+    final name = nameController.text.trim();
 
-    if (owner.isNotEmpty && name.isNotEmpty) {
-      repoData = RepoData(owner, name);
-      try {
-        final fetchedIssues = await repoData!.fetchIssues();
-        setState(() {
-          issues = fetchedIssues;
-        });
-        // Clearing text fields after fetching issues
-        titleController.clear();
-        bodyController.clear();
-      } catch (e) {
-        if (!mounted) return;
-        // Displaying error message on the screen using ScaffoldMessenger
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Error in either owner or repo name: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } else {
-      // Inform the user to provide owner and repo name if fields are empty
+    if (owner.isEmpty || name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Please enter both owner and repository name.'),
+          content: Text('Please enter both repository owner and name.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Initialize or rebuild RepoData with the latest inputs
+    repoData = RepoData(owner, name);
+
+    try {
+      final fetchedIssues = await repoData.fetchIssues();
+      setState(() {
+        issues = fetchedIssues;
+      });
+
+      // Clearing text fields after fetching issues
+      titleController.clear();
+      bodyController.clear();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error fetching issues: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -68,49 +65,65 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Function to create new issues using the RepoData class
   Future<void> createIssues() async {
-    final title = titleController.text;
-    final body = bodyController.text;
+    final title = titleController.text.trim();
+    final body = bodyController.text.trim();
+    final owner = ownerController.text.trim();
+    final name = nameController.text.trim();
 
-    // Ensure repoData is initialized
-    repoData ??= RepoData(ownerController.text, nameController.text);
+    if (owner.isEmpty || name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter both repository owner and name.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    if (title.isNotEmpty && body.isNotEmpty) {
-      setState(() {
-        isLoading = true;
-      });
-
-      try {
-        await repoData!.createIssue(title, body);
-        await fetchIssues();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Issue created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // Clearing text fields after fetching issues
-        titleController.clear();
-        bodyController.clear();
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to create issue: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      } finally {
-        setState(() {
-          isLoading = false;
-        });
-      }
-    } else {
+    if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please provide both title and body for the issue.'),
           backgroundColor: Colors.red,
         ),
       );
+      return;
+    }
+
+    // Rebuild RepoData with the latest inputs
+    repoData = RepoData(owner, name);
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await repoData.createIssue(title, body);
+      await fetchIssues();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Issue created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      titleController.clear();
+      bodyController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString(),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      titleController.clear();
+      bodyController.clear();
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -132,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               TextFormField(
                 controller: ownerController,
+                onChanged: (value) => setState(() {}),
                 decoration: kTextFormFieldDecoration.copyWith(
                   labelText: 'Repository Owner',
                 ),
@@ -141,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               TextFormField(
                 controller: nameController,
+                onChanged: (value) => setState(() {}),
                 decoration: kTextFormFieldDecoration.copyWith(
                   labelText: 'Repository Name',
                 ),
@@ -170,12 +185,9 @@ class _HomeScreenState extends State<HomeScreen> {
               isLoading
                   ? CircularProgressIndicator()
                   : GetPostButton(
-                      onPressed: (ownerController.text.isNotEmpty &&
-                              nameController.text.isNotEmpty)
-                          ? () async {
-                              await createIssues();
-                            }
-                          : null,
+                      onPressed: () async {
+                        await createIssues();
+                      },
                       buttonText: 'POST ISSUE',
                     ),
             ],
