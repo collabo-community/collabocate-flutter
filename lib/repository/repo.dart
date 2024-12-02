@@ -16,65 +16,55 @@ class RepoData {
     final url = Uri.https(
         'api.github.com', '/repos/$repositoryOwner/$repositoryName/issues');
 
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $githubToken',
-        'Accept': 'application/vnd.github.v3+json',
-      },
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to load issues');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 404) {
+        throw Exception(
+            'Repository not found. Please check the owner and repository name.');
+      } else {
+        throw ('Failed to fetch issues.');
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 
   // Function to create an new issue using a POST request
   Future<void> createIssue(String title, String body) async {
     final url = Uri.https(
-        'api.github.com', '/repos/$repositoryOwner/$repositoryName/issues');
+      'api.github.com',
+      '/repos/$repositoryOwner/$repositoryName/issues',
+    );
 
-    final response = await http.post(
-      url,
-      headers: {
-        'Authorization': 'Bearer $githubToken',
-        'Accept': 'application/vnd.github.v3+json',
-      },
-      body: jsonEncode(
-        {
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $githubToken',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+        body: jsonEncode({
           'title': title,
           'body': body,
-        },
-      ),
-    );
-    if (response.statusCode != 201) {
-      throw Exception('Failed to create issue');
-    }
-  }
-
-  // Function to create Pull request using POST request
-  Future<void> createPullRequest(
-      String title, String headBranch, String baseBranch, String body) async {
-    final url = Uri.https(
-        'api.github.com', '/repos/$repositoryOwner/$repositoryName/pulls');
-    final response = await http.post(
-      url,
-      headers: {
-        'Authorization': 'Bearer $githubToken',
-        'Accept': 'application/vnd.github.v3+json',
-      },
-      body: jsonEncode({
-        'title': 'title',
-        'body': 'body',
-        'head': 'headBranch',
-        'base': 'baseBranch',
-      }),
-    );
-    if (response.statusCode != 201) {
-      throw Exception(
-        'Failed to create pull request: ${response.statusCode} - ${response.body}',
+        }),
       );
+      if (response.statusCode == 201) {
+      } else if (response.statusCode == 404) {
+        throw ('Repository not found. Please check the owner and repository name.');
+      } else {
+        throw ('Failed to create issue.');
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 }

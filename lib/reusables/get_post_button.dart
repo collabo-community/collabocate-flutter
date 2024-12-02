@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 class GetPostButton extends StatelessWidget {
-  final void Function() onPressed;
+  final Future<void> Function()? onPressed;
   final String buttonText;
+
   const GetPostButton({
     super.key,
     required this.onPressed,
@@ -17,7 +18,11 @@ class GetPostButton extends StatelessWidget {
         color: Colors.blue,
         borderRadius: BorderRadius.circular(15.0),
         child: MaterialButton(
-          onPressed: onPressed,
+          onPressed: onPressed != null
+              ? () async {
+                  await onPressed!();
+                }
+              : null,
           minWidth: double.infinity,
           height: 50.0,
           child: Text(

@@ -18,6 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   TextEditingController nameController = TextEditingController();
 
   late RepoData repoData;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -26,42 +27,103 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Function to fetch issues with the RepoData class
   Future<void> fetchIssues() async {
-    String owner = ownerController.text;
-    String name = nameController.text;
+    final owner = ownerController.text.trim();
+    final name = nameController.text.trim();
 
-    if (owner.isNotEmpty && name.isNotEmpty) {
-      repoData = RepoData(owner, name);
-      try {
-        final fetchedIssues = await repoData.fetchIssues();
-        setState(() {
-          issues = fetchedIssues;
-        });
-        // Clearing text fields after fetching issues
-        titleController.clear();
-        bodyController.clear();
-      } catch (e) {
-        throw Exception(
-          'Failed to load issues',
-        );
-      }
+    if (owner.isEmpty || name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter both repository owner and name.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Initialize or rebuild RepoData with the latest inputs
+    repoData = RepoData(owner, name);
+
+    try {
+      final fetchedIssues = await repoData.fetchIssues();
+      setState(() {
+        issues = fetchedIssues;
+      });
+
+      // Clearing text fields after fetching issues
+      titleController.clear();
+      bodyController.clear();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error fetching issues: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
   // Function to create new issues using the RepoData class
   Future<void> createIssues() async {
-    final title = titleController.text;
-    final body = bodyController.text;
+    final title = titleController.text.trim();
+    final body = bodyController.text.trim();
+    final owner = ownerController.text.trim();
+    final name = nameController.text.trim();
 
-    if (title.isNotEmpty && body.isNotEmpty) {
-      try {
-        await repoData.createIssue(title, body);
-        await fetchIssues();
-        // Clearing text fields after fetching issues
-        titleController.clear();
-        bodyController.clear();
-      } catch (e) {
-        throw Exception('Failed to create issues');
-      }
+    if (owner.isEmpty || name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please enter both repository owner and name.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (title.isEmpty || body.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please provide both title and body for the issue.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Rebuild RepoData with the latest inputs
+    repoData = RepoData(owner, name);
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      await repoData.createIssue(title, body);
+      await fetchIssues();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Issue created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      titleController.clear();
+      bodyController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString(),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      titleController.clear();
+      bodyController.clear();
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -83,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               TextFormField(
                 controller: ownerController,
+                onChanged: (value) => setState(() {}),
                 decoration: kTextFormFieldDecoration.copyWith(
                   labelText: 'Repository Owner',
                 ),
@@ -92,64 +155,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               TextFormField(
                 controller: nameController,
+                onChanged: (value) => setState(() {}),
                 decoration: kTextFormFieldDecoration.copyWith(
                   labelText: 'Repository Name',
                 ),
-              ),
-              SizedBox(
-                height: 10,
-              ),
-              GetPostButton(
-                onPressed: fetchIssues,
-                buttonText: 'GET ISSUES',
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              Column(
-                children: [
-                  if (issues.isNotEmpty)
-                    Column(
-                      children: [
-                        Text(
-                          'Fetched Issues:',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            itemCount: issues.length,
-                            itemBuilder: (context, index) {
-                              final issue = issues[index];
-                              return ListTile(
-                                title: Text(
-                                  issue['title'],
-                                ),
-                                leading: Icon(
-                                  Icons.bug_report,
-                                  color: Colors.red,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    Text(
-                      'No issues fetched yet.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
-                      ),
-                    ),
-                ],
               ),
               SizedBox(
                 height: 25,
@@ -173,10 +182,14 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 height: 10,
               ),
-              GetPostButton(
-                onPressed: createIssues,
-                buttonText: 'POST ISSUE',
-              ),
+              isLoading
+                  ? CircularProgressIndicator()
+                  : GetPostButton(
+                      onPressed: () async {
+                        await createIssues();
+                      },
+                      buttonText: 'POST ISSUE',
+                    ),
             ],
           ),
         ),
