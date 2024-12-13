@@ -11,17 +11,62 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<dynamic> issues = [];
+  List<Map<String, String>> templates = [];
+  String? selectedTemplateType;
   TextEditingController titleController = TextEditingController();
   TextEditingController bodyController = TextEditingController();
 
   late RepoData repoData;
   bool isLoading = false;
+  bool isTemplatesLoaded = false;
 
   @override
   void initState() {
     super.initState();
     repoData = RepoData();
+    fetchTemplates();
+  }
+
+  // Function to fetch issue-temples from the backend.
+  Future<void> fetchTemplates() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final fetchedTemplates = await repoData.fetchIssueTemplate();
+      setState(() {
+        templates = fetchedTemplates;
+        isTemplatesLoaded = true;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load templates: $e'),
+        ),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  // Update issue body based on selected template
+  void updateIssueBody(String? templateType) async {
+    final template = templates.firstWhere(
+      (template) => template['name'] == templateType,
+      orElse: () => {'body': ''},
+    );
+
+    if (template['body'] != null) {
+      final templateBody = await repoData.fetchTemplateBody(template['body']!);
+      setState(() {
+        selectedTemplateType = templateType;
+        bodyController.text = templateBody;
+      });
+    }
   }
 
   // Function to create new issues using the RepoData class
@@ -54,6 +99,9 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       titleController.clear();
       bodyController.clear();
+      setState(() {
+        selectedTemplateType = null;
+      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -88,6 +136,43 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.symmetric(vertical: 5),
           child: Column(
             children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Choose report type',
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 15,
+                  ),
+                  DropdownButtonFormField<String>(
+                    icon: Icon(Icons.arrow_drop_down_circle_outlined),
+                    value: selectedTemplateType,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(10),
+                        ),
+                      ),
+                      labelText: 'Template Type',
+                    ),
+                    items: templates.map((template) {
+                      print('Template: ${template['name']}');
+                      return DropdownMenuItem(
+                        value: template['name'],
+                        child: Text(template['name'] ?? ''),
+                      );
+                    }).toList(),
+                    onChanged: (value) => updateIssueBody(value),
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: 15,
+              ),
               TextFormField(
                 controller: titleController,
                 decoration: kTextFormFieldDecoration.copyWith(
@@ -102,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: kTextFormFieldDecoration.copyWith(
                   labelText: 'Issue Body',
                 ),
-                maxLines: 3,
+                maxLines: 5,
               ),
               SizedBox(
                 height: 10,
