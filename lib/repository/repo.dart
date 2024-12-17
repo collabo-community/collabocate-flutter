@@ -6,27 +6,45 @@ import 'package:http/http.dart' as http;
 class RepoData {
   String backendURL = dotenv.env['BACKEND_URL'] ?? '';
 
-// Function to perform a GET request to fetch issues from a Github repo.
-  Future<List<dynamic>> fetchIssues() async {
-    final url = Uri.parse(
-      '$backendURL/github/issues',
-    );
+// Function to perform a GET request to fetch issue-templates from a Github repo.
+  Future<List<Map<String, String>>> fetchIssueTemplate() async {
+    final url = Uri.parse('$backendURL/github/issue-templates');
 
     try {
-      final response = await http.get(
-        url,
-      );
+      final response = await http.get(url);
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else if (response.statusCode == 404) {
-        throw Exception(
-            'Repository not found. Please check the owner and repository name.');
+        final decodedResponse = json.decode(response.body);
+        if (decodedResponse['templates'] is List) {
+          return (decodedResponse['templates'] as List).map((template) {
+            return {
+              'name': template['name'] as String,
+              'body': template['download_url'] as String, // Link to fetch body
+            };
+          }).toList();
+        } else {
+          throw Exception('Unexpected response format.');
+        }
       } else {
-        throw ('Failed to fetch issues.');
+        throw Exception(
+            'Failed to load templates. Status code: ${response.statusCode}');
       }
     } catch (e) {
-      rethrow;
+      throw Exception('Error fetching templates: $e');
+    }
+  }
+
+  // Function to fetch a template body
+  Future<String> fetchTemplateBody(String url) async {
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        return response.body;
+      } else {
+        throw Exception('Failed to fetch template body.');
+      }
+    } catch (e) {
+      throw Exception('Error fetching template body: $e');
     }
   }
 
