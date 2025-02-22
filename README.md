@@ -87,22 +87,5 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 ```
 
-
-## Additional information
-## CollabocateUI
-This is the Main class for initializing the plugin.
-```dart
-CollabocateUI({required String backendUrl})
-```
-## IssueForm
-This is the Widget for displaying the issue creation form.
-```dart
-IssueForm({
-  required GitHubService githubService,
-  TextStyle? labelStyle,
-  InputDecoration? inputDecoration,
-  ButtonStyle? buttonStyle,
-})
-```
 ## Example
-View the flutter app in the `example` directory
+View the flutter app in the `example(collabocate_flutter_test_app)` directory.
