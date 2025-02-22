@@ -1,0 +1,36 @@
+{
+  "projectName": "collabocate-flutter",
+  "projectOwner": "collabo-community",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributorsPerLine": 6,
+  "contributorsSortAlphabetically": true,
+  "skipCi": true,
+  "contributors": [
+    {
+      "login": "Oyebliss",
+      "name": "Olatunji Sodiq Oyebisi ",
+      "avatar_url": "https://avatars.githubusercontent.com/u/148455956?v=4",
+      "profile": "https://github.com/Oyebliss",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Ifycode",
+      "name": "Mary @Ifycode",
+      "avatar_url": "https://avatars.githubusercontent.com/u/45185388?v=4",
+      "profile": "https://github.com/Ifycode",
+      "contributions": [
+        "code"
+      ]
+    }
+  ],
+  "commitConvention": "angular",
+  "commitType": "docs"
+}
